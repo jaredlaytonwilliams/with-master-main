@@ -23,7 +23,7 @@ const ReverseChordSearch = () => {
     const handleAddFlat = () => setQuery(query + '♭');
 
     const isValidInput = (input) => {
-        const validInputRegex = /^[A-Ga-g#b♭]+$/;
+        const validInputRegex = /^[A-Za-z\s]+$/; // Allows any uppercase and lowercase letters
         return validInputRegex.test(input);
     };
 
@@ -49,17 +49,17 @@ const ReverseChordSearch = () => {
     };
 
     const processSearch = () => {
-        // Assuming processQuery returns an object with detectedChords and similarChords
-        // Adjust as necessary to match your actual implementation
         const processed = processQuery(query);
-        if (!processed.detectedChords.length) {
-            alert('No matching chord found.');
-            return;
-        }
         setResults(processed.detectedChords);
         setSimilarResults(processed.similarChords);
         setCurrentPage(1);
         setShowSearchAndSimilarChords(false);
+    
+        if (!processed.detectedChords.length && !processed.similarChords.length) {
+            alert('No matching chord found.');
+        } else if (!processed.detectedChords.length) {
+            alert('No exact match found, but here are some similar chords.');
+        }
     };
 
     const handleChordSelect = (chord) => {

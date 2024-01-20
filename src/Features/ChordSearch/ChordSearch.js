@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Chord, Scale } from '@tonaljs/tonal';
-
+import './ChordSearch.css';
 const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [chordNotes, setChordNotes] = useState([]);
@@ -8,6 +8,7 @@ const SearchBar = () => {
   const [bearerToken, setBearerToken] = useState('');
   const [nextChords, setNextChords] = useState([]);
   const [apiTestResponse, setApiTestResponse] = useState(null); // State to store test API response
+  const [chordName, setChordName] = useState(''); // New state variable for storing the chord name
 
   useEffect(() => {
     authenticateHooktheory();
@@ -53,7 +54,8 @@ const SearchBar = () => {
     event.preventDefault();
     const chordInput = searchTerm;
     const chord = Chord.get(chordInput);
-  
+    setChordName(chordInput);
+
     if (chord.empty) {
       setChordNotes([]);
       alert('Invalid chord name. Please try again.');
@@ -257,25 +259,35 @@ useEffect(() => {
     testDiminishedChordAPIResponse(); // Fetch new data
   }
 }, [bearerToken]);
+
+const generateScaleNotes = (key) => {
+  const scale = Scale.get(key);
+  return scale.notes;
+};
 return (
   <div>
     <form onSubmit={handleSubmit}>
-      <select onChange={handleKeyChange} value={selectedKey} style={{ padding: '10px', fontSize: '16px' }}>
+    <select onChange={handleKeyChange} value={selectedKey} style={{ padding: '10px', fontSize: '16px' }}>
         {allKeys.map((key, index) => (
           <option key={index} value={key}>{key}</option>
         ))}
       </select>
-      <input
-        type="text"
-        placeholder="Enter Chord (e.g., Cmaj7)"
-        value={searchTerm}
-        onChange={handleChange}
-      />
-      <button type="submit" style={{ padding: '10px 15px', fontSize: '16px' }}>Find Chord</button>
+      <div className="notes-row">
+        {generateScaleNotes(selectedKey).map((note, index) => (
+          <button
+            key={index}
+            //onClick={() => handleNoteClick(note)}
+            className="note-box"
+          >
+            {note}
+          </button>
+        ))}
+      </div>
     </form>
+    
     {chordNotes.length > 0 && (
   <div>
-
+    <h3></h3>
     <h2>Chord Notes:</h2>
     <p>{chordNotes.join(', ')}</p> {/* Joins all chord notes with a comma and space */}
   </div>

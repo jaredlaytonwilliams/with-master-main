@@ -1,0 +1,13 @@
+.notes-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  
+  .note-box {
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: 1px solid #ccc;
+    background-color: #f7f7f7;
+    cursor: pointer;
+  }
