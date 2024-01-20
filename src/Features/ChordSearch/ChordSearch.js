@@ -9,18 +9,22 @@ const NoteButton = ({ note, index, onClick }) => {
     </button>
   );
 };
-
+const ChordHTML = ({ html }) => {
+  return <span dangerouslySetInnerHTML={{ __html: html }} />;
+};
 const SearchBar = () => {
   const [chordNotes, setChordNotes] = useState([]);
   const [selectedKey, setSelectedKey] = useState('C');
   const [bearerToken, setBearerToken] = useState('');
   const [apiTestResponse, setApiTestResponse] = useState(null); // State to store test API response
-  
+  const [chordSet, setChordSet] = useState(majorScaleChords); // Initialize with majorScaleChords
+  const [selectedScaleDegree, setSelectedScaleDegree] = useState(null);
+
 
   useEffect(() => {
     authenticateHooktheory();
   }, []);
-  const chordSet = selectedKey === 'major' ? majorScaleChords : minorScaleChords;
+  setChordSet[chordSet] = selectedKey === 'major' ? majorScaleChords : minorScaleChords;
 
   const authenticateHooktheory = async () => {
     const authEndpoint = 'https://api.hooktheory.com/v1/users/auth';
@@ -49,7 +53,14 @@ const SearchBar = () => {
       console.error('There was an error retrieving the Bearer Token:', error);
     }
   };
-
+  const handleScaleDegreeChange = (event) => {
+    setSelectedScaleDegree(event.target.value);
+  };
+  useEffect(() => {
+    if (bearerToken && selectedKey && selectedScaleDegree) {
+      fetchDataForSelectedKeyAndDegree(selectedKey, selectedScaleDegree);
+    }
+  }, [bearerToken, selectedKey, selectedScaleDegree]);
   const determineScale = () => {
     const rootNote = selectedKey.length > 1 && selectedKey[1] !== 'm' ? selectedKey.substring(0, 2) : selectedKey[0];
     const isMinor = selectedKey.includes('m');
@@ -59,11 +70,30 @@ const SearchBar = () => {
 
 
  
-  const getScaleNotes = () => {
-    const scaleName = determineScale();
-    console.log("notes in scale " , Scale.get(scaleName).notes)
-    return Scale.get(scaleName).notes;
+  const fetchDataForSelectedKeyAndDegree = async (selectedKey, scaleDegree) => {
+    // Construct the API endpoint with selected key and scale degree
+    const apiEndpoint = `https://api.yourapi.com/data?key=${selectedKey}&degree=${scaleDegree}`;
+
+    try {
+      const response = await fetch(apiEndpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setApiTestResponse(data); // Update the state with the fetched data
+    } catch (error) {
+      console.error(`There was an error fetching data:`, error);
+    }
   };
+  
   const handleNoteClick = (note, index) => {
     // Determine the scale type and corresponding chord set
     console.log("yoyoyo", selectedKey)
@@ -137,7 +167,29 @@ const getScale = (key) => {
 };
 
 
+const handleApiResponseClick = async (childPath) => {
+  const formattedPath = childPath.replace(/-/g, ',');
+  const apiEndpoint = `https://api.hooktheory.com/v1/trends/nodes?cp=${formattedPath}`;
 
+  try {
+    const response = await fetch(apiEndpoint, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${bearerToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    setApiTestResponse(data); // Update the state with the new fetched data
+  } catch (error) {
+    console.error(`There was an error retrieving the API response for path ${formattedPath}:`, error);
+  }
+};
 
 const testDiminishedChordAPIResponse = async (testChord, childPath, selectedKey) => {
   
@@ -163,16 +215,13 @@ const testDiminishedChordAPIResponse = async (testChord, childPath, selectedKey)
 
     const data = await response.json();
 
-    const scale = getScale(selectedKey); // Ensure you have this function or logic to get the current scale
-console.log("what is the scale? " , scale);
-
-    const updatedData = data.map(chord => ({
-      ...chord,
-      chordName: chord.chord_HTML ? getChordNameFromID(chord.chord_HTML, scale) : ''
+    const filteredData = data.map(item => ({
+      chord_HTML: item.chord_HTML,
+      probability: item.probability,
+      child_path: item.child_path
     }));
-
-    localStorage.setItem('apiTestResponse', JSON.stringify(updatedData)); // Store the enhanced data
-    setApiTestResponse(updatedData); // Update state with enhanced data
+    localStorage.setItem('apiTestResponse', JSON.stringify(filteredData)); // Store the enhanced data
+    setApiTestResponse(filteredData); // Update state with enhanced data
 
   } catch (error) {
     console.error(`There was an error retrieving the API response for ${testChord}:`, error);
@@ -188,7 +237,12 @@ useEffect((testDiminishedChordAPIResponse) => {
   }
 }, [bearerToken]);
 const handleKeyChange = (event) => {
-  setSelectedKey(event.target.value);
+  const newKey = event.target.value;
+  setSelectedKey(newKey);
+
+  // Update chordSet based on whether the newKey is 'major' or 'minor'
+  const isMinor = newKey.includes('minor'); // Assuming minor keys end with 'm'
+  setChordSet(isMinor ? minorScaleChords : majorScaleChords);
 };
 
 
@@ -203,11 +257,7 @@ return (
         </button>
       ))}
     
-    <select onChange={handleKeyChange} value={selectedKey} style={{ padding: '10px', fontSize: '16px' }}>
-        {allKeys.map((key, index) => (
-          <option key={index} value={key}>{key}</option>
-        ))}
-      </select>
+    
       <div className="note-buttons">
       {Object.keys(chordSet).map((chord, index) => {
         return (
@@ -231,13 +281,23 @@ return (
   </div>
 )}
     <div>
-      <h3>API Test Response:</h3>
-      <pre>{JSON.stringify(apiTestResponse, null, 2)}</pre>
-    </div>
+    <h3>Most Probable Chords To Come Next in Major Scale:</h3>
+    <h4>Click the chord to go deeper.</h4>
+  <pre>
+    {apiTestResponse && apiTestResponse.map((item, index) => (
+      <div key={index} onClick={() => handleApiResponseClick(item.child_path)}className="api-response-item">
+        <ChordHTML html={item.chord_HTML} /> - Probability: {(item.probability * 100).toFixed(2)}% - Path: {item.child_path.replace(/,/g, '-')}
+      </div>
+    ))}
+  </pre>
+</div>
     </div>
   );
- 
 };
+    
+  
+ 
+
 const allKeys = ['major', 'minor'];
 
 

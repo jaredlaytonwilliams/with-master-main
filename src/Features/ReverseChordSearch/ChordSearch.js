@@ -23,7 +23,7 @@ const ReverseChordSearch = () => {
     const handleAddFlat = () => setQuery(query + '♭');
 
     const isValidInput = (input) => {
-        const validInputRegex = /^[A-Za-z\s]+$/; // Allows any uppercase and lowercase letters
+        const validInputRegex = /^[A-Za-z\s\u266D]+$/; // Allows uppercase, lowercase letters, and flat symbols
         return validInputRegex.test(input);
     };
 
