@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Chord, Scale } from '@tonaljs/tonal';
 import './ChordSearch.css';
+
+const NoteButton = ({ note, onClick }) => {
+  return (
+    <button className="note-button" onClick={() => onClick(note)}>
+      {note}
+    </button>
+  );
+};
+
 const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [chordNotes, setChordNotes] = useState([]);
   const [selectedKey, setSelectedKey] = useState('C');
   const [bearerToken, setBearerToken] = useState('');
-  const [nextChords, setNextChords] = useState([]);
   const [apiTestResponse, setApiTestResponse] = useState(null); // State to store test API response
   const [chordName, setChordName] = useState(''); // New state variable for storing the chord name
 
@@ -42,10 +50,22 @@ const SearchBar = () => {
     }
   };
 
-  const handleChange = (event) => {
-    setSearchTerm(event.target.value);
+  const determineScale = () => {
+    const rootNote = selectedKey.length > 1 && selectedKey[1] !== 'm' ? selectedKey.substring(0, 2) : selectedKey[0];
+    const isMinor = selectedKey.includes('m');
+    const scaleType = isMinor ? ' minor' : ' major';
+    return `${rootNote}${scaleType}`;
   };
 
+  const getScaleNotes = () => {
+    const scaleName = determineScale();
+    console.log("what " , Scale.get(scaleName).notes)
+    return Scale.get(scaleName).notes;
+  };
+  const handleNoteClick = (note) => {
+    // Handle the click event for each note button
+    console.log("Note clicked:", note);
+  };
   const handleKeyChange = (event) => {
     setSelectedKey(event.target.value);
   };
@@ -167,57 +187,7 @@ const getChordRoot = (input) => {
   return chord.tonic; // This ensures we are getting the root of the chord as recognized by the tonal library
 };
 
-const fetchNextChords = async (chordInput, childPath, key) => {
-  if (!bearerToken) {
-    console.error('Bearer token is not set.');
-    return;
-  }
 
-  const scale = getScale(key);
-  console.log("fetchNextChords scale" + scale.notes);
-  const chordRoot = getChordRoot(chordInput); // Get chord root based on the new logic
-  console.log("fetchNextChords root" + chordRoot);
-  const scaleNoteIndex = scale.notes.indexOf(chordRoot) + 1;
-  console.log("fetchNextChords index" + scaleNoteIndex);
-
-  
-  if (scaleNoteIndex === -1) {
-    console.error(`Chord root ${chordRoot} is not in the ${scale.name} scale.`);
-    return;
-  }
-
-
-  const apiEndpoint = `https://api.hooktheory.com/v1/trends/nodes?cp=${childPath}`;
-  try {
-    const response = await fetch(apiEndpoint, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${bearerToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json(); // Ensure data is defined here before using it
-
-    // Determine if the chord is major or minor
-    const isMinor = chordInput.includes('m');
-    const scaleChords = isMinor ? minorScaleChords : majorScaleChords;
-
-    // Map the Roman numeral to the correct chord name based on the scale
-    const updatedData = data.map(chord => ({
-      ...chord,
-      chordName: chord.chord_HTML ? getChordNameFromID(chord.chord_HTML, scale) : ''
-    }));
-    setNextChords(updatedData);
-
-  } catch (error) {
-    console.error('There was an error retrieving the next chords:', error);
-  }
-};
 
 const testDiminishedChordAPIResponse = async (testChord, childPath, selectedKey) => {
   
@@ -242,16 +212,23 @@ const testDiminishedChordAPIResponse = async (testChord, childPath, selectedKey)
     }
 
     const data = await response.json();
-    localStorage.setItem('apiTestResponse', JSON.stringify(data)); // Store in localStorage
-    setApiTestResponse(data); // Update state
 
+    const scale = getScale(selectedKey); // Ensure you have this function or logic to get the current scale
+
+    const updatedData = data.map(chord => ({
+      ...chord,
+      chordName: chord.chord_HTML ? getChordNameFromID(chord.chord_HTML, scale) : ''
+    }));
+
+    localStorage.setItem('apiTestResponse', JSON.stringify(updatedData)); // Store the enhanced data
+    setApiTestResponse(updatedData); // Update state with enhanced data
 
   } catch (error) {
     console.error(`There was an error retrieving the API response for ${testChord}:`, error);
   }
 };
 
-useEffect(() => {
+useEffect((testDiminishedChordAPIResponse) => {
   const storedApiResponse = localStorage.getItem('apiTestResponse');
   if (storedApiResponse) {
     setApiTestResponse(JSON.parse(storedApiResponse)); // Load from localStorage
@@ -262,8 +239,10 @@ useEffect(() => {
 
 const generateScaleNotes = (key) => {
   const scale = Scale.get(key);
+  console.log("scale ", scale);
   return scale.notes;
 };
+
 return (
   <div>
     <form onSubmit={handleSubmit}>
@@ -272,17 +251,23 @@ return (
           <option key={index} value={key}>{key}</option>
         ))}
       </select>
-      <div className="notes-row">
-        {generateScaleNotes(selectedKey).map((note, index) => (
-          <button
-            key={index}
-            //onClick={() => handleNoteClick(note)}
-            className="note-box"
-          >
-            {note}
-          </button>
-        ))}
+      <div className="note-buttons">
+        {getScaleNotes().map((note, index) => {
+          const isMinorKey = selectedKey.includes("m");
+          const scaleChords = isMinorKey ? minorScaleChords : majorScaleChords;
+          
+          // Adjusted indexing - assuming scaleChords starts from 'I'/'i' for the first note
+          const chordIndex = Object.keys(scaleChords)[index];
+          const chordType = chordIndex 
+            ? scaleChords[chordIndex] === chordIndex.toUpperCase() ? 'major' : 'minor'
+            : 'unknown'; // Handle undefined chordIndex
+
+          const noteLabel = `${note} ${chordType}`;
+          return <NoteButton key={index} note={noteLabel} onClick={handleNoteClick} />;
+        })}
       </div>
+      
+      
     </form>
     
     {chordNotes.length > 0 && (
@@ -298,6 +283,7 @@ return (
     </div>
     </div>
   );
+ 
 };
 const allKeys = [
   'C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B',
