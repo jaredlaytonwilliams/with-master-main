@@ -2,25 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { Chord, Scale } from '@tonaljs/tonal';
 import './ChordSearch.css';
 
-const NoteButton = ({ note, onClick }) => {
+const NoteButton = ({ note, index, onClick }) => {
   return (
-    <button className="note-button" onClick={() => onClick(note)}>
+    <button className="note-button" onClick={() => onClick(note, index)}>
       {note}
     </button>
   );
 };
 
 const SearchBar = () => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [chordNotes, setChordNotes] = useState([]);
   const [selectedKey, setSelectedKey] = useState('C');
   const [bearerToken, setBearerToken] = useState('');
   const [apiTestResponse, setApiTestResponse] = useState(null); // State to store test API response
-  const [chordName, setChordName] = useState(''); // New state variable for storing the chord name
+  
 
   useEffect(() => {
     authenticateHooktheory();
   }, []);
+  const chordSet = selectedKey === 'major' ? majorScaleChords : minorScaleChords;
 
   const authenticateHooktheory = async () => {
     const authEndpoint = 'https://api.hooktheory.com/v1/users/auth';
@@ -57,103 +57,45 @@ const SearchBar = () => {
     return `${rootNote}${scaleType}`;
   };
 
+
+ 
   const getScaleNotes = () => {
     const scaleName = determineScale();
-    console.log("what " , Scale.get(scaleName).notes)
+    console.log("notes in scale " , Scale.get(scaleName).notes)
     return Scale.get(scaleName).notes;
   };
-  const handleNoteClick = (note) => {
-    // Handle the click event for each note button
-    console.log("Note clicked:", note);
-  };
-  const handleKeyChange = (event) => {
-    setSelectedKey(event.target.value);
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    const chordInput = searchTerm;
-    const chord = Chord.get(chordInput);
-    setChordName(chordInput);
-
-    if (chord.empty) {
-      setChordNotes([]);
-      alert('Invalid chord name. Please try again.');
-      return;
-    }
-  console.log("selectedKey " , selectedKey)
-    const isMinorKey = selectedKey.includes("m");
-    const scaleChords = isMinorKey ? minorScaleChords : majorScaleChords;
-    const scale = Scale.get(selectedKey.replace("m", "") + (isMinorKey ? " minor" : " major"));
-    const chordRoot = getChordRoot(chordInput);
+  const handleNoteClick = (note, index) => {
+    // Determine the scale type and corresponding chord set
+    console.log("yoyoyo", selectedKey)
+    const isMinor = selectedKey.includes('minor');
+    const chordSet = isMinor ? minorScaleChords : majorScaleChords;
+    console.log(chordSet);
     
-    // Find the index of the chord in the scale
-    const scaleNoteIndex = findChordIndexInScale(chord, scale);
-    if (scaleNoteIndex === -1) {
-      alert(`The entered chord root ${chordRoot} is not in the ${selectedKey} scale.`);
-      return;
+    // Find the position of the chord in the chord set
+    const chordPosition = chordSet[note];
+    if (!chordPosition) {
+      console.error("Chord not found in scale:", note);
+      return; // Exit the function if chord is not found
     }
-    const childPath = scaleNoteIndex + 1;
-    console.log("Child Path: " + childPath);
-    // Determine the Roman numeral corresponding to the chord's position in the scale
-    const romanNumeral = Object.keys(scaleChords).find(key => scaleChords[key] === scaleNoteIndex + 1);
-    if (!romanNumeral) {
-      alert(`Unable to find a matching Roman numeral for the entered chord in the scale.`);
-      return;
-    }
-  
-    // Determine the required chord type based on the Roman numeral case
-    let requiredChordType;
-if (romanNumeral.endsWith('°') || romanNumeral.endsWith('dim')) {
-    requiredChordType = 'diminished';
-} else if (romanNumeral === romanNumeral.toLowerCase()) {
-    requiredChordType = 'minor';
-} else {
-    requiredChordType = 'major';
-}
-console.log('Required Chord Type:', requiredChordType);
 
-// Check if the entered chord matches the required type (ignoring case for user input)
-let enteredChordType;
-if (chordInput.toLowerCase().includes('dim') || chordInput.toLowerCase().includes('°')) {
-    enteredChordType = 'diminished';
-} else if (chordInput.toLowerCase().includes('m')) {
-    enteredChordType = 'minor';
-} else {
-    enteredChordType = 'major';
-}
-console.log('Entered Chord Type:', enteredChordType);
+    console.log("Chord position", chordPosition);
 
-if (enteredChordType !== requiredChordType) {
-    alert(`The entered chord must be ${requiredChordType} according to the scale pattern.`);
-    return;
-}
-  
-    setChordNotes(chord.notes);
-    console.log("Chord Notes: " + chord.notes);
-  
-   
-    testDiminishedChordAPIResponse(chordInput, childPath, selectedKey);
+    // The index in chordSet is 1-based
+    const childPath = chordPosition;
+    const scaleType = isMinor ? 'minor' : 'major';
 
-    if (scaleNoteIndex === -1) {
-      alert(`Chord root ${chordRoot} is not in the ${selectedKey} scale.`);
-      return;
-    }
+    // Call testDiminishedChordAPIResponse with the chord, childPath, and scaleType
+    testDiminishedChordAPIResponse(note, childPath, scaleType);
+    console.log("Chord", note);
+    console.log("ChildPath", childPath);
+    console.log("ScaleType", scaleType);
+};
+
   
-    
-    console.log("Child Path: " + childPath);
+
+
   
-  };
-  const findChordIndexInScale = (chord, scale) => {
-    const chordRoot = chord.tonic; // The root note of the chord
-    const scaleNoteIndex = scale.notes.indexOf(chordRoot); // Find the index of the chord root in the scale notes
   
-    if (scaleNoteIndex === -1) {
-      throw new Error(`Chord root ${chordRoot} is not in the ${scale.name} scale.`);
-    }
-  
-    return scaleNoteIndex;
-  };
 const getScale = (key) => {
   const isMinor = key.includes("m");
   const scaleType = isMinor ? " minor" : " major";
@@ -161,31 +103,39 @@ const getScale = (key) => {
 
   return Scale.get(key.replace("m", "") + scaleType);};
 
-  const getChordNameFromID = (romanNumeral, scale) => {
-    const scaleChords = scale.type === 'minor' ? minorScaleChords : majorScaleChords;
-    const chordIndex = scaleChords[romanNumeral];
 
-    if (chordIndex === undefined) {
-        return ''; // Handle the case where the Roman numeral is not found
+  const getChordNameFromID = (romanNumeral, scale) => {
+    // Determine the scale type
+    const scaleChords = scale.type === 'minor' ? minorScaleChords : majorScaleChords;
+    console.log("scalechords " + scaleChords);
+    // Convert Roman numeral to Arabic numeral (1-based index)
+    const arabicNumeral = scaleChords[romanNumeral];
+    if (!arabicNumeral) {
+        console.error("Invalid Roman numeral:", romanNumeral);
+        return 'Invalid Roman numeral';
     }
 
-    const scaleNote = scale.notes[chordIndex - 1];
+    // Check if the index is within the range of scale notes
+    if (arabicNumeral < 1 || arabicNumeral > scale.notes.length) {
+      console.log(" what is the length for ", scale.notes.length);
+        console.error("Index out of range:", arabicNumeral, "for Roman numeral:", romanNumeral);
+        return 'Index out of range';
+    }
 
-    // Determine the chord type (major, minor, or diminished)
+    // Get the scale note
+    const scaleNote = scale.notes[arabicNumeral]; // Adjust for 0-based index of array
+    console.log(scale.notes[arabicNumeral]);
+    // Determine chord type
     let chordType = '';
-    if (romanNumeral.includes('°') || romanNumeral.includes('dim')) {
-        chordType = 'dim'; // Diminished chord
+    if (romanNumeral.endsWith('°') || romanNumeral.includes('dim')) {
+        chordType = 'dim';
     } else if (romanNumeral === romanNumeral.toLowerCase()) {
-        chordType = 'm'; // Minor chord
-    } // Major chord has no suffix
+        chordType = 'm';
+    }
 
     return scaleNote + chordType;
 };
 
-const getChordRoot = (input) => {
-  const chord = Chord.get(input);
-  return chord.tonic; // This ensures we are getting the root of the chord as recognized by the tonal library
-};
 
 
 
@@ -214,6 +164,7 @@ const testDiminishedChordAPIResponse = async (testChord, childPath, selectedKey)
     const data = await response.json();
 
     const scale = getScale(selectedKey); // Ensure you have this function or logic to get the current scale
+console.log("what is the scale? " , scale);
 
     const updatedData = data.map(chord => ({
       ...chord,
@@ -236,39 +187,41 @@ useEffect((testDiminishedChordAPIResponse) => {
     testDiminishedChordAPIResponse(); // Fetch new data
   }
 }, [bearerToken]);
-
-const generateScaleNotes = (key) => {
-  const scale = Scale.get(key);
-  console.log("scale ", scale);
-  return scale.notes;
+const handleKeyChange = (event) => {
+  setSelectedKey(event.target.value);
 };
 
+
+const scale = getScale(selectedKey);
 return (
   <div>
-    <form onSubmit={handleSubmit}>
+    
+
+      {Array.isArray(scale) && scale.map((chordLabel, index) => (
+        <button key={chordLabel} onClick={() => handleNoteClick(chordLabel, index)}>
+          {chordLabel}
+        </button>
+      ))}
+    
     <select onChange={handleKeyChange} value={selectedKey} style={{ padding: '10px', fontSize: '16px' }}>
         {allKeys.map((key, index) => (
           <option key={index} value={key}>{key}</option>
         ))}
       </select>
       <div className="note-buttons">
-        {getScaleNotes().map((note, index) => {
-          const isMinorKey = selectedKey.includes("m");
-          const scaleChords = isMinorKey ? minorScaleChords : majorScaleChords;
-          
-          // Adjusted indexing - assuming scaleChords starts from 'I'/'i' for the first note
-          const chordIndex = Object.keys(scaleChords)[index];
-          const chordType = chordIndex 
-            ? scaleChords[chordIndex] === chordIndex.toUpperCase() ? 'major' : 'minor'
-            : 'unknown'; // Handle undefined chordIndex
-
-          const noteLabel = `${note} ${chordType}`;
-          return <NoteButton key={index} note={noteLabel} onClick={handleNoteClick} />;
-        })}
-      </div>
+      {Object.keys(chordSet).map((chord, index) => {
+        return (
+          <NoteButton 
+            key={index} 
+            note={chord} 
+            onClick={handleNoteClick} 
+          />
+        );
+      })}
+    </div>
       
       
-    </form>
+    
     
     {chordNotes.length > 0 && (
   <div>
@@ -285,10 +238,8 @@ return (
   );
  
 };
-const allKeys = [
-  'C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B',
-  'Cm', 'C#m', 'Dbm', 'Dm', 'D#m', 'Ebm', 'Em', 'Fm', 'F#m', 'Gbm', 'Gm', 'G#m', 'Abm', 'Am', 'A#m', 'Bbm', 'Bm'
-];
+const allKeys = ['major', 'minor'];
+
 
 const majorScaleChords = {
   'I': 1, 'ii': 2, 'iii': 3, 'IV': 4, 'V': 5, 'vi': 6, 'vii°': 7
