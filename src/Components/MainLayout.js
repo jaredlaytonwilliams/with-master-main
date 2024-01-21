@@ -8,8 +8,9 @@ const MainLayout = ({ children }) => {
                 {/* Navigation Links or Menu Here */}
                 <nav>
                     <Link to="/">Home</Link>
-                    <Link to="/reversechords">Reverse Chord Finder</Link>
-                    <Link to="/chords">Chord Finder</Link>
+                    <Link to="/reversechords">Reverse Chord Search</Link>
+                    <Link to="/nextchordprobability">Next Most Probable Chord</Link>
+                    <Link to="/songs">Song From Chords</Link>
                 </nav>
             </header>
             <main>

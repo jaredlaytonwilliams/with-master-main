@@ -48,7 +48,8 @@ export const findSimilarChords = (detectedChords, query) => {
     if (detectedChords.length === 0 && !query) return [];
 
     const detectedNotes = extractNotes(detectedChords, query);
-    const rootNote = query.match(/([A-G](#|b)?)/)[0];
+    const rootNoteMatch = query.match(/([A-G](#|b)?)/);
+    const rootNote = rootNoteMatch ? rootNoteMatch[0] : null;
     let chordScores = [];
 
     ChordType.all().forEach(chordType => {
