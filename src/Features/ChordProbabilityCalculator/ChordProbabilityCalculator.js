@@ -11,6 +11,7 @@ const ChordProbabilityCalculator = () => {
   const [apiTestResponse, setApiTestResponse] = useState(null);
   const [chordSet] = useState(MajorScaleChords);
   const [bearerToken, setBearerToken] = useState('');
+  const [isButtonClicked, setIsButtonClicked] = useState(false); // New state variable
 
   useEffect(() => {
   const getToken = async () => {
@@ -30,6 +31,7 @@ const ChordProbabilityCalculator = () => {
   }, [bearerToken, selectedKey]);
 
   const handleNoteClick = (note, index) => {
+    setIsButtonClicked(true);
     const chordPosition = chordSet[note];
     if (!chordPosition) {
       console.error("Chord not found in scale:", note);
@@ -70,11 +72,13 @@ const ChordProbabilityCalculator = () => {
         </div>
       )}
 
-      <div>
-        <h3>Most Probable Chords To Come Next in Major Scale:</h3>
-        <h4>Click the chord to go deeper.</h4>
-        <pre>{renderApiTestResponse()}</pre>
-      </div>
+      {isButtonClicked && (
+        <div>
+          <h3>Most Probable Chords To Come Next in Major Scale:</h3>
+          <h4>Click the chord to go deeper.</h4>
+          <pre>{renderApiTestResponse()}</pre>
+        </div>
+      )}
     </div>
   );
 };

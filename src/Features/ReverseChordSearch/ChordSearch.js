@@ -15,6 +15,7 @@ const ReverseChordSearch = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [showSearchAndSimilarChords, setShowSearchAndSimilarChords] = useState(true);
     const chordsPerPage = 10;
+    const [searchPerformed, setSearchPerformed] = useState(false); // New state variable
 
     const handleInputChange = (e) => {
         setQuery(e.target.value.toUpperCase());
@@ -39,7 +40,8 @@ const ReverseChordSearch = () => {
             clearResults();
             return;
         }
-
+        
+        setSearchPerformed(true); // Set search performed to true
         processSearch();
     };
 
@@ -89,28 +91,31 @@ const ReverseChordSearch = () => {
                         onSearch={handleSearch}
                         query={query}
                     />
-                    <ChordResultsComponent
-                        results={results}
-                        onChordSelect={handleChordSelect}
-                />
-                    <SimilarChordsComponent
-                        similarChords={similarResults}
-                        onChordSelect={handleChordSelect}
-                        currentPage={currentPage}
-                        chordsPerPage={chordsPerPage}
-                />
-            </>
-        )}
-        {!selectedChord && (
-            <Pagination
-                currentPage={currentPage}
-                paginate={setCurrentPage}
-                totalChords={similarResults.length}
-                chordsPerPage={chordsPerPage}
-            />
-        )}
-    </div>
-);
+                    {searchPerformed && (
+                        <>
+                            <ChordResultsComponent
+                                results={results}
+                                onChordSelect={handleChordSelect}
+                            />
+                            <SimilarChordsComponent
+                                similarChords={similarResults}
+                                onChordSelect={handleChordSelect}
+                                currentPage={currentPage}
+                                chordsPerPage={chordsPerPage}
+                                searchPerformed={searchPerformed}
+                            />
+                            <Pagination
+                                currentPage={currentPage}
+                                paginate={setCurrentPage}
+                                totalChords={similarResults.length}
+                                chordsPerPage={chordsPerPage}
+                            />
+                        </>
+                    )}
+                </>
+            )}
+        </div>
+    );
 };
 
 export default ReverseChordSearch;
