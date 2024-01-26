@@ -70,6 +70,14 @@ const App = () => {
 
 
 };
+const resetSelection = () => {
+  setSelectedChords([]);
+  setSongs([]);
+  setCurrentPage(1);
+  setCanGoBack(false);
+  setCanGoForward(false);
+};
+
 const loadMoreSongs = () => {
   const nextPage = currentPage + 1;
   setCurrentPage(nextPage);
@@ -97,7 +105,7 @@ return (
         return (
           <ChordButton 
             key={chordNumber} 
-            chord={chordNumber} 
+            //chord={chordNumber} 
             label={romanNumeral} 
             isSelected={isSelected}
             onClick={() => handleChordClick(chordNumber)} 
@@ -110,6 +118,8 @@ return (
         {selectedChords.length > 0 ? selectedChords.map(chord => <span key={chord}>{numberToRoman(chord)} </span>) : <span>None</span>}
       </div>
     <SongList songs={songs} />
+    <button onClick={resetSelection}>Reset Selection</button>
+
     {canGoBack && <button onClick={goToPreviousPage}>Previous Page</button>}
       {canGoForward && <button onClick={goToNextPage}>Next Page</button>}
     </div>
