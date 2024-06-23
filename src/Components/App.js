@@ -5,6 +5,7 @@ import ReverseChordSearch from '../Features/ReverseChordSearch/ChordSearch.js';
 import ChordProbabilityCalculator from '../Features/ChordProbabilityCalculator/ChordProbabilityCalculator.js';
 import SongsFromChords from '../Features/SongsFromChords/SongsFromChords.js'
 import HomeComponent from '../Components/HomeComponent.js';
+import '../App.css';
 const App = () => {
     return (
         <Router>

@@ -13,6 +13,16 @@
   }
 }
 
+.nav-link {
+  margin-right: 15px; /* Adjust the value as needed */
+  text-decoration: none; /* Optional: Remove underline */
+  color: inherit; /* Optional: Maintain default link color */
+}
+
+.nav-link:last-child {
+  margin-right: 0; /* Remove margin from the last link */
+}
+
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
@@ -35,4 +45,62 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+body {
+  background: url('../public/gtr1.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: white; /* Optional: Ensure text is visible against the background */
+}
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center the links horizontally */
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent background for the navbar */
+  padding: 10px;
+  border-radius: 15px; /* Rounded edges */
+  margin: 20px; /* Add some margin to prevent the navbar from touching the edges of the viewport */
+  transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.nav-link {
+  margin-right: 20px; /* Adjust the space between links */
+  color: white; /* White text for visibility */
+  text-decoration: none; /* Remove underline from links */
+  display: inline-block; /* Ensure the link takes up the height */
+  padding: 10px 15px; /* Add padding to increase clickable area */
+  border-radius: 10px; /* Make each link slightly rounded */
+}
+.nav-link:hover {
+  background: rgba(0, 0, 0, 0.7); /* Darker color on hover */
+}
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+  width: 100%;
+  margin-top: 20px; /* Add top margin to the main content if needed */
+
+}
+
+.red-background {
+  background-color: red;
+  padding: 10px; /* Add padding to create some space around the text */
+  border-radius: 5px; /* Optional: Add rounded corners */
+  color: white; /* Ensure the text color is visible against the red background */
+  width: 70%; /* Adjust width as needed */
+    max-width: 600px; /* Optionally limit the maximum width */
+    text-align: center; /* Center the text */
+    margin: 20px auto; /* Center the div horizontally with auto margins */
 }

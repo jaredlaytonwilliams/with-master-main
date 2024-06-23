@@ -17,8 +17,8 @@ const App = () => {
 
   const authenticate = async () => {
     const credentials = {
-      username: 'jaredlaytonwilliams',
-      password: 'TheHorseRanFast5'
+      username: process.env.REACT_APP_HOOKTHEORY_USERNAME,
+      password: process.env.REACT_APP_HOOKTHEORY_PASSWORD
     };
     try {
       const response = await axios.post('https://api.hooktheory.com/v1/users/auth', credentials);
@@ -26,11 +26,12 @@ const App = () => {
     } catch (error) {
       console.error('Authentication Error:', error);
     }
-  }
+  };
+
   useEffect(() => {
     authenticate();
   }, []);
-  
+
   const fetchSongs = async (apiEndpoint, page = 1) => {
     try {
       const response = await fetch(`${apiEndpoint}&page=${page}`, {
@@ -40,13 +41,13 @@ const App = () => {
           'Content-Type': 'application/json'
         }
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
+
       const data = await response.json();
-  
+
       if (Array.isArray(data)) {
         setSongs(data);
         setCanGoBack(page > 1);
@@ -60,70 +61,73 @@ const App = () => {
       setSongs([]);
     }
   };
+
   const handleChordClick = (chord) => {
-  const updatedSelectedChords = [...selectedChords, chord];
-  setSelectedChords(updatedSelectedChords);
+    const updatedSelectedChords = [...selectedChords, chord];
+    setSelectedChords(updatedSelectedChords);
 
-  const apiEndpoint = `https://api.hooktheory.com/v1/trends/songs?cp=${updatedSelectedChords.join(',')}`;
-  setCurrentPage(1); // Reset page to 1 on new chord selection
-  fetchSongs(apiEndpoint);
+    const apiEndpoint = `https://api.hooktheory.com/v1/trends/songs?cp=${updatedSelectedChords.join(',')}`;
+    setCurrentPage(1); // Reset page to 1 on new chord selection
+    fetchSongs(apiEndpoint);
+  };
 
+  const resetSelection = () => {
+    setSelectedChords([]);
+    setSongs([]);
+    setCurrentPage(1);
+    setCanGoBack(false);
+    setCanGoForward(false);
+  };
 
-};
-const resetSelection = () => {
-  setSelectedChords([]);
-  setSongs([]);
-  setCurrentPage(1);
-  setCanGoBack(false);
-  setCanGoForward(false);
-};
+  const loadMoreSongs = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    fetchSongs(`https://api.hooktheory.com/v1/trends/songs?cp=${selectedChords.join(',')}`, nextPage);
+  };
 
-const loadMoreSongs = () => {
-  const nextPage = currentPage + 1;
-  setCurrentPage(nextPage);
-  fetchSongs(`https://api.hooktheory.com/v1/trends/songs?cp=${selectedChords.join(',')}`, nextPage);
-};
-const goToNextPage = () => {
-  const nextPage = currentPage + 1;
-  setCurrentPage(nextPage);
-  fetchSongs(`https://api.hooktheory.com/v1/trends/songs?cp=${selectedChords.join(',')}`, nextPage);
-};
+  const goToNextPage = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    fetchSongs(`https://api.hooktheory.com/v1/trends/songs?cp=${selectedChords.join(',')}`, nextPage);
+  };
 
-const goToPreviousPage = () => {
-  const previousPage = currentPage - 1;
-  setCurrentPage(previousPage);
-  fetchSongs(`https://api.hooktheory.com/v1/trends/songs?cp=${selectedChords.join(',')}`, previousPage);
-};
-return (
-  <div>
+  const goToPreviousPage = () => {
+    const previousPage = currentPage - 1;
+    setCurrentPage(previousPage);
+    fetchSongs(`https://api.hooktheory.com/v1/trends/songs?cp=${selectedChords.join(',')}`, previousPage);
+  };
+
+  return (
     <div>
-      {romanNumerals.map((romanNumeral, index) => {
-        const chordNumber = index + 1;
-        const isSelected = selectedChords.includes(chordNumber);
-        console.log(`Chord ${chordNumber} selected: ${isSelected}`); // Debugging line
+      <div>
+        {romanNumerals.map((romanNumeral, index) => {
+          const chordNumber = index + 1;
+          const isSelected = selectedChords.includes(chordNumber);
+          console.log(`Chord ${chordNumber} selected: ${isSelected}`); // Debugging line
 
-        return (
-          <ChordButton 
-            key={chordNumber} 
-            //chord={chordNumber} 
-            label={romanNumeral} 
-            isSelected={isSelected}
-            onClick={() => handleChordClick(chordNumber)} 
-          />
-        );
-      })}
-    </div>
-    <div>
-        <h3>Selected Chords:</h3>
-        {selectedChords.length > 0 ? selectedChords.map(chord => <span key={chord}>{numberToRoman(chord)} </span>) : <span>None</span>}
+          return (
+            <ChordButton 
+              key={chordNumber} 
+              label={romanNumeral} 
+              isSelected={isSelected}
+              onClick={() => handleChordClick(chordNumber)} 
+            />
+          );
+        })}
       </div>
-    <SongList songs={songs} />
-    <button onClick={resetSelection}>Reset Selection</button>
+      {selectedChords.length > 0 && (
+        <div>
+          <h3>Selected Chords:</h3>
+          {selectedChords.map(chord => <span key={chord}>{numberToRoman(chord)} </span>)}
+          <button onClick={resetSelection}>Reset Selection</button>
+        </div>
+      )}
+      <SongList songs={songs} />
 
-    {canGoBack && <button onClick={goToPreviousPage}>Previous Page</button>}
+      {canGoBack && <button onClick={goToPreviousPage}>Previous Page</button>}
       {canGoForward && <button onClick={goToNextPage}>Next Page</button>}
     </div>
-);
+  );
 };
 
 export default App;

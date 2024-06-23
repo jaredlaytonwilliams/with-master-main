@@ -4,21 +4,15 @@ import { Link } from 'react-router-dom';
 const MainLayout = ({ children }) => {
     return (
         <div>
-            <header>
-                {/* Navigation Links or Menu Here */}
-                <nav>
-                    <Link to="/">Home</Link>
-                    <Link to="/reversechords">Reverse Chord Search</Link>
-                    <Link to="/nextchordprobability">Next Most Probable Chord</Link>
-                    <Link to="/songs">Song From Chords</Link>
-                </nav>
-            </header>
+            <div className="nav-container">
+                <Link to="/" className="nav-link">Home</Link>
+                <Link to="/reversechords" className="nav-link">Reverse Chord Search</Link>
+                <Link to="/nextchordprobability" className="nav-link">Next Most Probable Chord</Link>
+                <Link to="/songs" className="nav-link">Song From Chords</Link>
+            </div>
             <main>
                 {children}
             </main>
-            <footer>
-                {/* Footer content */}
-            </footer>
         </div>
     );
 };
