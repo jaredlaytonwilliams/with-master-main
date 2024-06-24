@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ChordButton from './ChordButton';
 import SongList from './SongList';
+import { auth } from '../../firebase';
+import { logActivity } from '../../Components/LogActivity';
 
-const App = () => {
+const SongsFromChords = () => {
   const [token, setToken] = useState('');
   const [selectedChords, setSelectedChords] = useState([]);
   const [songs, setSongs] = useState([]);
@@ -66,9 +68,19 @@ const App = () => {
     const updatedSelectedChords = [...selectedChords, chord];
     setSelectedChords(updatedSelectedChords);
 
+    if (auth.currentUser) {
+      logActivity(auth.currentUser.uid, `Selected chord: ${numberToRoman(chord)}`);
+    }
+
     const apiEndpoint = `https://api.hooktheory.com/v1/trends/songs?cp=${updatedSelectedChords.join(',')}`;
     setCurrentPage(1); // Reset page to 1 on new chord selection
     fetchSongs(apiEndpoint);
+  };
+
+  const handleSongClick = (song) => {
+    if (auth.currentUser) {
+      logActivity(auth.currentUser.uid, `Clicked on song: ${song.artist} - ${song.song} (${song.section})`);
+    }
   };
 
   const resetSelection = () => {
@@ -103,8 +115,6 @@ const App = () => {
         {romanNumerals.map((romanNumeral, index) => {
           const chordNumber = index + 1;
           const isSelected = selectedChords.includes(chordNumber);
-          console.log(`Chord ${chordNumber} selected: ${isSelected}`); // Debugging line
-
           return (
             <ChordButton 
               key={chordNumber} 
@@ -122,7 +132,7 @@ const App = () => {
           <button onClick={resetSelection}>Reset Selection</button>
         </div>
       )}
-      <SongList songs={songs} />
+      <SongList songs={songs} onSongClick={handleSongClick} />
 
       {canGoBack && <button onClick={goToPreviousPage}>Previous Page</button>}
       {canGoForward && <button onClick={goToNextPage}>Next Page</button>}
@@ -130,4 +140,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default SongsFromChords;

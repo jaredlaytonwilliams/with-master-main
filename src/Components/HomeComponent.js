@@ -1,13 +1,15 @@
 import React from 'react';
+import RecentActivity from './RecentActivity';
 
-class HomeComponent extends React.Component {
-    render() {
-        return (
-            <div className="red-background">
+const HomeComponent = ({ isAuthenticated }) => {
+  return (
+    <div className="home-container">
+      <div className="red-background">
         <h1>Welcome to My Music App!</h1>
       </div>
-        );
-    }
-}
+      {isAuthenticated && <RecentActivity />}
+    </div>
+  );
+};
 
 export default HomeComponent;

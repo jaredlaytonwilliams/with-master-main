@@ -4,6 +4,8 @@ import NoteButton from './NoteButton';
 import ChordHTML from './ChordHTML';
 import MajorScaleChords from './MajorScaleChords';
 import { authenticateHooktheory, fetchData } from './APIUtils';
+import { auth } from '../../firebase';
+import { logActivity } from '../../Components/LogActivity';
 
 const ChordProbabilityCalculator = () => {
   const [chordNotes] = useState([]);
@@ -11,17 +13,17 @@ const ChordProbabilityCalculator = () => {
   const [apiTestResponse, setApiTestResponse] = useState(null);
   const [chordSet] = useState(MajorScaleChords);
   const [bearerToken, setBearerToken] = useState('');
-  const [isButtonClicked, setIsButtonClicked] = useState(false); // New state variable
+  const [isButtonClicked, setIsButtonClicked] = useState(false);
 
   useEffect(() => {
-  const getToken = async () => {
-    const token = await authenticateHooktheory();
-    if (token) {
-      setBearerToken(token);
-    }
-  };
-  getToken();
-}, []);
+    const getToken = async () => {
+      const token = await authenticateHooktheory();
+      if (token) {
+        setBearerToken(token);
+      }
+    };
+    getToken();
+  }, []);
   
   useEffect(() => {
     if (bearerToken && selectedKey) {
@@ -30,7 +32,7 @@ const ChordProbabilityCalculator = () => {
     }
   }, [bearerToken, selectedKey]);
 
-  const handleNoteClick = (note, index) => {
+  const handleNoteClick = (note) => {
     setIsButtonClicked(true);
     const chordPosition = chordSet[note];
     if (!chordPosition) {
@@ -41,12 +43,20 @@ const ChordProbabilityCalculator = () => {
     const childPath = chordPosition;
     const apiEndpoint = `https://api.hooktheory.com/v1/trends/nodes?cp=${childPath}`;
     fetchData(apiEndpoint, bearerToken, setApiTestResponse);
+
+    if (auth.currentUser) {
+      logActivity(auth.currentUser.uid, `Clicked on chord: ${note}`);
+    }
   };
 
   const handleApiResponseClick = async (childPath) => {
     const formattedPath = childPath.replace(/-/g, ',');
     const apiEndpoint = `https://api.hooktheory.com/v1/trends/nodes?cp=${formattedPath}`;
     fetchData(apiEndpoint, bearerToken, setApiTestResponse);
+
+    if (auth.currentUser) {
+      logActivity(auth.currentUser.uid, `Clicked on chord path: ${childPath.replace(/,/g, '-')}`);
+    }
   };
 
   const renderApiTestResponse = () => (
@@ -82,4 +92,5 @@ const ChordProbabilityCalculator = () => {
     </div>
   );
 };
+
 export default ChordProbabilityCalculator;
